@@ -209,14 +209,15 @@
             </div>
         </header>
         <input type="text" id="searchInput" class="search-bar" placeholder="Пошук сервісів...">
+        
         <div class="filters">
-            <div class="chip active" onclick="filterServices('all', this)">Всі</div>
-            <div class="chip" onclick="filterServices('stream', this)">Стрімінг</div>
-            <div class="chip" onclick="filterServices('music', this)">Музика</div>
-            <div class="chip" onclick="filterServices('game', this)">Ігри</div>
-            <div class="chip" onclick="filterServices('prod', this)">Робота</div>
-            <div class="chip" onclick="filterServices('edu', this)">Навчання</div>
-            <div class="chip" onclick="filterServices('sec', this)">VPN/Захист</div>
+            <div class="chip active" onclick="activateFilter('all', this)">Всі</div>
+            <div class="chip" onclick="activateFilter('stream', this)">Стрімінг</div>
+            <div class="chip" onclick="activateFilter('music', this)">Музика</div>
+            <div class="chip" onclick="activateFilter('game', this)">Ігри</div>
+            <div class="chip" onclick="activateFilter('prod', this)">Робота</div>
+            <div class="chip" onclick="activateFilter('edu', this)">Навчання</div>
+            <div class="chip" onclick="activateFilter('sec', this)">VPN/Захист</div>
         </div>
     </div>
 
@@ -303,6 +304,10 @@
     const tg = window.Telegram.WebApp;
     tg.expand();
 
+    // ГЛОБАЛЬНІ ЗМІННІ СТАНУ
+    let currentFilter = 'all';
+    let currentSearch = '';
+
     // Запуск + Завантаження даних
     window.onload = function() {
         setTimeout(() => {
@@ -310,6 +315,7 @@
             document.getElementById('main-app').classList.add('visible');
         }, 2000);
         loadUserData(); // Відновлюємо збережені цифри
+        renderServices(); // Малюємо сервіси
     };
 
     // --- ЛОКАЛЬНА ПАМ'ЯТЬ (Імітація Бази Даних) ---
@@ -350,32 +356,76 @@
         }
     }
 
-    // --- БАЗА СЕРВІСІВ ---
+    // --- БАЗА СЕРВІСІВ (Всі твої сервіси) ---
     const servicesData = [
         { name: "Netflix", type: "stream", domain: "netflix.com" },
         { name: "YouTube Premium", type: "stream", domain: "youtube.com" },
         { name: "Apple TV+", type: "stream", domain: "tv.apple.com" },
+        { name: "Hulu", type: "stream", domain: "hulu.com" },
+        { name: "Disney+", type: "stream", domain: "disneyplus.com" },
+        { name: "HBO Max", type: "stream", domain: "hbomax.com" },
+        { name: "Prime Video", type: "stream", domain: "primevideo.com" },
+        
         { name: "Spotify", type: "music", domain: "spotify.com" },
         { name: "Apple Music", type: "music", domain: "music.apple.com" },
+        { name: "YouTube Music", type: "music", domain: "music.youtube.com" },
+        { name: "SoundCloud", type: "music", domain: "soundcloud.com" },
+        { name: "Tidal", type: "music", domain: "tidal.com" },
+        
         { name: "PlayStation Plus", type: "game", domain: "playstation.com" },
         { name: "Xbox Game Pass", type: "game", domain: "xbox.com" },
         { name: "Discord Nitro", type: "game", domain: "discord.com" },
+        { name: "Steam", type: "game", domain: "store.steampowered.com" },
+        { name: "EA Play", type: "game", domain: "ea.com" },
+        
         { name: "ChatGPT Plus", type: "prod", domain: "openai.com" },
         { name: "Adobe Cloud", type: "prod", domain: "adobe.com" },
+        { name: "Canva", type: "prod", domain: "canva.com" },
+        { name: "Figma", type: "prod", domain: "figma.com" },
+        { name: "Microsoft 365", type: "prod", domain: "microsoft.com" },
+        { name: "Zoom", type: "prod", domain: "zoom.us" },
+        
         { name: "Duolingo", type: "edu", domain: "duolingo.com" },
-        { name: "Tinder", type: "other", domain: "tinder.com" },
+        { name: "Coursera", type: "edu", domain: "coursera.org" },
+        { name: "Udemy", type: "edu", domain: "udemy.com" },
+        
         { name: "NordVPN", type: "sec", domain: "nordvpn.com" },
-        // ... (можна додати решту 60 сервісів сюди з минулого коду)
+        { name: "ExpressVPN", type: "sec", domain: "expressvpn.com" },
+        { name: "1Password", type: "sec", domain: "1password.com" },
+        
+        { name: "Tinder", type: "other", domain: "tinder.com" },
+        { name: "Bumble", type: "other", domain: "bumble.com" },
+        { name: "Glovo", type: "other", domain: "glovoapp.com" }
     ];
 
     const typeNames = { stream: "Стрімінг", music: "Музика", game: "Ігри", prod: "Робота", sec: "Безпека", edu: "Навчання", other: "Інше" };
     const listContainer = document.getElementById('servicesList');
 
-    function renderServices(filter = 'all', searchQuery = '') {
+    // --- НОВА ЛОГІКА ФІЛЬТРІВ І ПОШУКУ ---
+    
+    // 1. Функція, яка спрацьовує при кліку на кнопку фільтра
+    function activateFilter(filterType, btnElement) {
+        // Оновлюємо змінну
+        currentFilter = filterType;
+
+        // Візуально перемикаємо клас 'active' на кнопках
+        document.querySelectorAll('.chip').forEach(chip => chip.classList.remove('active'));
+        btnElement.classList.add('active');
+
+        // Перемальовуємо список
+        renderServices();
+    }
+
+    // 2. Функція, яка малює список сервісів
+    function renderServices() {
         listContainer.innerHTML = '';
+        
         const filtered = servicesData.filter(s => {
-            const matchesCategory = filter === 'all' || s.type === filter;
-            const matchesSearch = s.name.toLowerCase().includes(searchQuery.toLowerCase());
+            // Перевірка категорії
+            const matchesCategory = currentFilter === 'all' || s.type === currentFilter;
+            // Перевірка пошуку
+            const matchesSearch = s.name.toLowerCase().includes(currentSearch.toLowerCase());
+            
             return matchesCategory && matchesSearch;
         });
 
@@ -464,11 +514,12 @@
     document.querySelectorAll('.modal-overlay').forEach(overlay => {
         overlay.onclick = (e) => { if(e.target === overlay) { closeModal(); closeStats(); }};
     });
-
-    renderServices();
     
-    // Пошук
-    document.getElementById('searchInput').addEventListener('input', (e) => renderServices('all', e.target.value));
+    // Слухач подій для ПОШУКУ
+    document.getElementById('searchInput').addEventListener('input', (e) => {
+        currentSearch = e.target.value;
+        renderServices();
+    });
     
 </script>
 
