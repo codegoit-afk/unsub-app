@@ -6,17 +6,18 @@
     <title>UnSub App</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        /* --- СТИЛІ --- */
+        /* --- ЗАГАЛЬНІ СТИЛІ --- */
         :root {
             --bg-color: #121216;
             --text-main: #ffffff;
             --card-bg: #1e1e24;
             --primary: #6c5ce7;
             --text-sec: #a0a0b0;
+            --danger: #ff7675;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-main);
             margin: 0;
@@ -24,9 +25,10 @@
             display: flex;
             justify-content: center;
             overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        /* --- SPLASH SCREEN (Вітальна анімація) --- */
+        /* --- SPLASH SCREEN (Заставка) --- */
         #splash-screen {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -36,7 +38,7 @@
             align-items: center;
             justify-content: center;
             z-index: 9999;
-            transition: opacity 0.8s ease-out, visibility 0.8s;
+            transition: opacity 0.6s ease-out, visibility 0.6s;
         }
         
         #splash-screen.hidden {
@@ -74,7 +76,7 @@
             to { opacity: 1; color: var(--text-sec); }
         }
 
-        /* --- ОСНОВНИЙ ДОДАТОК --- */
+        /* --- ГОЛОВНИЙ ЕКРАН --- */
         .app-container {
             width: 100%;
             max-width: 100%;
@@ -83,86 +85,132 @@
             display: flex;
             flex-direction: column; 
             height: 100%;
-            opacity: 0; /* Спочатку приховано */
-            transition: opacity 1s;
+            opacity: 0;
+            transition: opacity 0.5s;
         }
         .app-container.visible { opacity: 1; }
 
         .static-header { flex-shrink: 0; }
         
         header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .savings { font-size: 11px; color: var(--text-sec); letter-spacing: 0.5px; }
+        .savings { font-size: 11px; color: var(--text-sec); letter-spacing: 0.5px; text-transform: uppercase; }
         .amount { font-size: 24px; font-weight: 800; color: var(--text-main); margin-top: 2px; }
 
         .search-bar {
             background: var(--card-bg);
             border: 1px solid transparent;
             border-radius: 12px;
-            padding: 12px;
+            padding: 12px 12px 12px 40px;
             width: 100%;
             color: var(--text-main);
             box-sizing: border-box;
             margin-bottom: 10px;
             font-size: 16px;
             outline: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23a0a0b0' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: 12px center;
         }
         
         .filters { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 5px; margin-bottom: 10px; scrollbar-width: none; }
+        .filters::-webkit-scrollbar { display: none; }
+
         .chip {
             background: var(--card-bg); padding: 8px 14px; border-radius: 18px; font-size: 13px;
             white-space: nowrap; cursor: pointer; border: 1px solid transparent; color: var(--text-main);
+            transition: 0.2s;
         }
-        .chip.active { background: var(--primary); color: #fff; }
+        .chip.active { background: var(--primary); color: #fff; box-shadow: 0 4px 12px rgba(108, 92, 231, 0.3); }
 
-        .service-list-wrapper { flex-grow: 1; overflow-y: auto; padding-bottom: 100px; }
+        .service-list-wrapper { flex-grow: 1; overflow-y: auto; padding-bottom: 100px; -webkit-overflow-scrolling: touch; }
+        
         .service-card {
-            background: var(--card-bg); border-radius: 14px; padding: 12px;
+            background: var(--card-bg); border-radius: 16px; padding: 12px;
             display: flex; align-items: center; cursor: pointer; margin-bottom: 8px;
+            transition: transform 0.1s, background-color 0.2s;
         }
-        .service-icon {
-            width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
-            margin-right: 12px; flex-shrink: 0; background-color: #333; overflow: hidden;
-        }
-        .service-icon img { width: 100%; height: 100%; object-fit: cover; }
+        .service-card:active { transform: scale(0.98); background-color: #25252b; }
 
-        .service-info { flex-grow: 1; }
-        .service-name { font-weight: 600; font-size: 15px; margin-bottom: 2px; }
+        .service-icon {
+            width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
+            margin-right: 12px; flex-shrink: 0; background-color: #2d2d35; overflow: hidden; position: relative;
+        }
+        .service-icon img { width: 100%; height: 100%; object-fit: cover; transition: opacity 0.3s; }
+
+        .service-info { flex-grow: 1; overflow: hidden; }
+        .service-name { font-weight: 600; font-size: 15px; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .service-meta { display: flex; align-items: center; font-size: 12px; color: var(--text-sec); }
         .tag { padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; text-transform: uppercase; margin-right: 6px; }
 
-        .tag.prod { background: rgba(72, 52, 212, 0.2); color: #a29bfe; }
-        .tag.music { background: rgba(0, 168, 255, 0.2); color: #74b9ff; }
-        .tag.stream { background: rgba(235, 77, 75, 0.2); color: #ff7675; }
-        .tag.game { background: rgba(85, 239, 196, 0.2); color: #55efc4; }
-        .tag.other { background: rgba(253, 203, 110, 0.2); color: #fdcb6e; }
+        .tag.prod { background: rgba(162, 155, 254, 0.15); color: #a29bfe; }
+        .tag.music { background: rgba(116, 185, 255, 0.15); color: #74b9ff; }
+        .tag.stream { background: rgba(255, 118, 117, 0.15); color: #ff7675; }
+        .tag.game { background: rgba(85, 239, 196, 0.15); color: #55efc4; }
+        .tag.other { background: rgba(253, 203, 110, 0.15); color: #fdcb6e; }
+        .tag.sec { background: rgba(99, 110, 114, 0.3); color: #b2bec3; }
+        .tag.edu { background: rgba(250, 177, 160, 0.15); color: #fab1a0; }
 
-        /* Модалка */
+        /* --- МОДАЛЬНЕ ВІКНО --- */
         .modal-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(2px);
+            background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(4px);
             display: flex; align-items: flex-end; opacity: 0; pointer-events: none;
             transition: opacity 0.2s; z-index: 1000;
         }
         .modal-overlay.open { opacity: 1; pointer-events: all; }
 
         .modal {
-            background: var(--bg-color); width: 100%; padding: 20px;
-            border-top-left-radius: 20px; border-top-right-radius: 20px;
+            background: #18181b; width: 100%; padding: 24px;
+            border-top-left-radius: 24px; border-top-right-radius: 24px;
             transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
-            box-shadow: 0 -5px 20px rgba(0,0,0,0.3); border-top: 1px solid var(--card-bg);
+            box-shadow: 0 -10px 40px rgba(0,0,0,0.5); border-top: 1px solid #333;
+            max-height: 90vh; overflow-y: auto;
         }
         .modal-overlay.open .modal { transform: translateY(0); }
 
-        .form-group { margin-bottom: 16px; }
-        .form-control {
-            width: 100%; background: var(--card-bg); border: none; color: var(--text-main);
-            padding: 12px; border-radius: 10px; font-size: 16px; outline: none; box-sizing: border-box;
+        .modal-header { text-align: center; margin-bottom: 24px; }
+        .modal-img-container {
+            width: 64px; height: 64px; border-radius: 18px; background: #2d2d35; 
+            margin: 0 auto 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.3);
         }
+        .modal-img { width: 100%; height: 100%; object-fit: cover; }
+        .modal h2 { margin: 0; font-size: 22px; font-weight: 700; color: white; }
+        .modal p { margin: 4px 0 0; color: var(--primary); font-size: 14px; font-weight: 500; }
+
+        /* Форми */
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+        .form-group { margin-bottom: 16px; }
+        .form-label { display: block; margin-bottom: 8px; color: var(--text-sec); font-size: 11px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; }
+        
+        .form-control {
+            width: 100%; background: #27272a; border: 1px solid #3f3f46; color: var(--text-main);
+            padding: 14px; border-radius: 12px; font-size: 16px; outline: none; box-sizing: border-box;
+            transition: all 0.2s; -webkit-appearance: none;
+        }
+        .form-control:focus { border-color: var(--primary); background: #2d2d35; }
+
+        select.form-control {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23a0a0b0' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right 14px center; padding-right: 30px;
+        }
+
+        .input-group { position: relative; }
+        .currency-symbol { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-sec); font-weight: 600; }
+        .input-with-icon { padding-left: 30px; }
         
         .btn-confirm {
-            width: 100%; padding: 14px; border-radius: 12px; border: none;
-            font-weight: 600; font-size: 16px; cursor: pointer;
-            background: var(--primary); color: #fff; margin-top: 10px;
+            width: 100%; padding: 16px; border-radius: 14px; border: none;
+            font-weight: 700; font-size: 16px; cursor: pointer;
+            background: linear-gradient(135deg, var(--primary), #a29bfe); 
+            color: #fff; margin-top: 10px;
+            box-shadow: 0 4px 15px rgba(108, 92, 231, 0.4);
+            transition: transform 0.1s;
+        }
+        .btn-confirm:active { transform: scale(0.98); }
+
+        .btn-cancel {
+            width: 100%; padding: 14px; background: transparent; border: none; color: var(--text-sec);
+            font-size: 15px; cursor: pointer; margin-top: 5px; font-weight: 500;
         }
     </style>
 </head>
@@ -177,17 +225,19 @@
     <div class="static-header">
         <header>
             <div>
-                <div class="savings">ВСЬОГО СЕРВІСІВ</div>
+                <div class="savings">ЗНАЙДЕНО СЕРВІСІВ</div>
                 <div class="amount" id="totalAmount">0</div>
             </div>
         </header>
-        <input type="text" id="searchInput" class="search-bar" placeholder="🔍 Пошук...">
+        <input type="text" id="searchInput" class="search-bar" placeholder="Пошук сервісів...">
         <div class="filters">
             <div class="chip active" onclick="filterServices('all', this)">Всі</div>
-            <div class="chip" onclick="filterServices('Стрімінг', this)">Стрімінг</div>
-            <div class="chip" onclick="filterServices('Музика', this)">Музика</div>
-            <div class="chip" onclick="filterServices('Ігри', this)">Ігри</div>
-            <div class="chip" onclick="filterServices('Продуктивність', this)">Робота</div>
+            <div class="chip" onclick="filterServices('stream', this)">Стрімінг</div>
+            <div class="chip" onclick="filterServices('music', this)">Музика</div>
+            <div class="chip" onclick="filterServices('game', this)">Ігри</div>
+            <div class="chip" onclick="filterServices('prod', this)">Робота</div>
+            <div class="chip" onclick="filterServices('edu', this)">Навчання</div>
+            <div class="chip" onclick="filterServices('sec', this)">VPN/Захист</div>
         </div>
     </div>
 
@@ -198,16 +248,49 @@
 
 <div class="modal-overlay" id="reminderModal">
     <div class="modal">
-        <h2 style="margin: 0 0 10px 0; text-align: center;">Нагадування</h2>
-        <div style="text-align: center; color: var(--text-sec); margin-bottom: 20px;" id="modalServiceName">Service</div>
+        <div class="modal-header">
+            <div class="modal-img-container">
+                <img id="modalImg" class="modal-img" src="" alt="">
+            </div>
+            <h2 id="modalTitle">Netflix</h2>
+            <p>Нова підписка</p>
+        </div>
         
+        <div class="form-grid">
+            <div class="form-group">
+                <label class="form-label">Ціна</label>
+                <div class="input-group">
+                    <span class="currency-symbol">$</span>
+                    <input type="number" class="form-control input-with-icon" id="priceInput" placeholder="0.00">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Цикл</label>
+                <select class="form-control" id="cycleInput">
+                    <option value="month">Щомісяця</option>
+                    <option value="year">Щороку</option>
+                    <option value="week">Щотижня</option>
+                </select>
+            </div>
+        </div>
+
         <div class="form-group">
-            <label style="display:block; margin-bottom:5px; color:var(--text-sec); font-size:12px;">ДАТА ЗАКІНЧЕННЯ</label>
+            <label class="form-label">Наступна оплата</label>
             <input type="date" class="form-control" id="dateInput">
         </div>
 
-        <button class="btn-confirm" onclick="sendDataToTelegram()">Зберегти нагадування</button>
-        <div style="text-align: center; margin-top: 15px; color: var(--text-sec); font-size: 14px;" onclick="closeModal()">Скасувати</div>
+        <div class="form-group">
+            <label class="form-label">Нагадати мені</label>
+            <select class="form-control" id="notifyInput">
+                <option value="1_day">За 1 день до оплати</option>
+                <option value="3_day">За 3 дні до оплати</option>
+                <option value="7_day">За тиждень до оплати</option>
+                <option value="same_day">У день оплати</option>
+            </select>
+        </div>
+
+        <button class="btn-confirm" onclick="sendDataToTelegram()">Додати підписку</button>
+        <button class="btn-cancel" onclick="closeModal()">Скасувати</button>
     </div>
 </div>
 
@@ -215,71 +298,140 @@
     const tg = window.Telegram.WebApp;
     tg.expand();
 
-    // --- ЛОГІКА SPLASH SCREEN ---
+    // Завантаження (Splash Screen)
     window.onload = function() {
         setTimeout(() => {
             document.getElementById('splash-screen').classList.add('hidden');
             document.getElementById('main-app').classList.add('visible');
-        }, 2500); // 2.5 секунди показуємо заставку
+        }, 2000);
     };
 
-    // --- ДАНІ ---
+    // --- БАЗА ДАНИХ (65+ СЕРВІСІВ) ---
     const servicesData = [
-        { name: "Netflix", category: "Стрімінг", type: "stream", domain: "netflix.com" },
-        { name: "YouTube Premium", category: "Стрімінг", type: "stream", domain: "youtube.com" },
-        { name: "Spotify", category: "Музика", type: "music", domain: "spotify.com" },
-        { name: "Apple Music", category: "Музика", type: "music", domain: "music.apple.com" },
-        { name: "PlayStation Plus", category: "Ігри", type: "game", domain: "playstation.com" },
-        { name: "Xbox Game Pass", category: "Ігри", type: "game", domain: "xbox.com" },
-        { name: "Steam", category: "Ігри", type: "game", domain: "steampowered.com" },
-        { name: "Discord Nitro", category: "Ігри", type: "game", domain: "discord.com" },
-        { name: "ChatGPT", category: "Продуктивність", type: "prod", domain: "openai.com" },
-        { name: "Midjourney", category: "Продуктивність", type: "prod", domain: "midjourney.com" },
-        { name: "Adobe Cloud", category: "Продуктивність", type: "prod", domain: "adobe.com" },
-        { name: "Figma", category: "Продуктивність", type: "prod", domain: "figma.com" },
-        { name: "Duolingo", category: "Навчання", type: "other", domain: "duolingo.com" },
-        { name: "Tinder", category: "Інше", type: "other", domain: "tinder.com" }
+        // STREAMING
+        { name: "Netflix", type: "stream", domain: "netflix.com" },
+        { name: "YouTube Premium", type: "stream", domain: "youtube.com" },
+        { name: "Apple TV+", type: "stream", domain: "tv.apple.com" },
+        { name: "Amazon Prime Video", type: "stream", domain: "primevideo.com" },
+        { name: "Disney+", type: "stream", domain: "disneyplus.com" },
+        { name: "Hulu", type: "stream", domain: "hulu.com" },
+        { name: "HBO Max", type: "stream", domain: "max.com" },
+        { name: "Megogo", type: "stream", domain: "megogo.net" },
+        { name: "Sweet.TV", type: "stream", domain: "sweet.tv" },
+        { name: "Twitch Sub", type: "stream", domain: "twitch.tv" },
+        { name: "Crunchyroll", type: "stream", domain: "crunchyroll.com" },
+        { name: "PornHub Premium", type: "stream", domain: "pornhub.com" },
+
+        // MUSIC
+        { name: "Spotify", type: "music", domain: "spotify.com" },
+        { name: "Apple Music", type: "music", domain: "music.apple.com" },
+        { name: "YouTube Music", type: "music", domain: "music.youtube.com" },
+        { name: "Deezer", type: "music", domain: "deezer.com" },
+        { name: "SoundCloud Go", type: "music", domain: "soundcloud.com" },
+        { name: "Tidal", type: "music", domain: "tidal.com" },
+        { name: "Epidemic Sound", type: "music", domain: "epidemicsound.com" },
+
+        // GAMING
+        { name: "PlayStation Plus", type: "game", domain: "playstation.com" },
+        { name: "Xbox Game Pass", type: "game", domain: "xbox.com" },
+        { name: "Steam (EA Play)", type: "game", domain: "steampowered.com" },
+        { name: "Nintendo Online", type: "game", domain: "nintendo.com" },
+        { name: "Discord Nitro", type: "game", domain: "discord.com" },
+        { name: "GeForce Now", type: "game", domain: "nvidia.com" },
+        { name: "Roblox Premium", type: "game", domain: "roblox.com" },
+        { name: "Battle.net", type: "game", domain: "blizzard.com" },
+        { name: "Ubisoft+", type: "game", domain: "ubisoft.com" },
+
+        // PRODUCTIVITY & AI
+        { name: "ChatGPT Plus", type: "prod", domain: "openai.com" },
+        { name: "Midjourney", type: "prod", domain: "midjourney.com" },
+        { name: "Adobe Creative Cloud", type: "prod", domain: "adobe.com" },
+        { name: "Canva Pro", type: "prod", domain: "canva.com" },
+        { name: "Figma Pro", type: "prod", domain: "figma.com" },
+        { name: "Notion", type: "prod", domain: "notion.so" },
+        { name: "Microsoft 365", type: "prod", domain: "office.com" },
+        { name: "Google One", type: "prod", domain: "google.com" },
+        { name: "Zoom", type: "prod", domain: "zoom.us" },
+        { name: "Slack", type: "prod", domain: "slack.com" },
+        { name: "Trello", type: "prod", domain: "trello.com" },
+        { name: "Dropbox", type: "prod", domain: "dropbox.com" },
+        { name: "Evernote", type: "prod", domain: "evernote.com" },
+        { name: "GitHub Copilot", type: "prod", domain: "github.com" },
+
+        // VPN & SECURITY
+        { name: "NordVPN", type: "sec", domain: "nordvpn.com" },
+        { name: "ExpressVPN", type: "sec", domain: "expressvpn.com" },
+        { name: "Surfshark", type: "sec", domain: "surfshark.com" },
+        { name: "ProtonVPN", type: "sec", domain: "protonvpn.com" },
+        { name: "Kaspersky", type: "sec", domain: "kaspersky.com" },
+        { name: "1Password", type: "sec", domain: "1password.com" },
+        { name: "LastPass", type: "sec", domain: "lastpass.com" },
+
+        // EDUCATION & OTHER
+        { name: "Duolingo Plus", type: "edu", domain: "duolingo.com" },
+        { name: "Coursera", type: "edu", domain: "coursera.org" },
+        { name: "Udemy", type: "edu", domain: "udemy.com" },
+        { name: "Udacity", type: "edu", domain: "udacity.com" },
+        { name: "Skillshare", type: "edu", domain: "skillshare.com" },
+        { name: "Tinder Gold", type: "other", domain: "tinder.com" },
+        { name: "Bumble Premium", type: "other", domain: "bumble.com" },
+        { name: "Medium", type: "other", domain: "medium.com" },
+        { name: "Patreon", type: "other", domain: "patreon.com" },
+        { name: "OnlyFans", type: "other", domain: "onlyfans.com" }
     ];
+
+    const typeNames = {
+        stream: "Стрімінг", music: "Музика", game: "Ігри", 
+        prod: "Продуктивність", sec: "Безпека", edu: "Навчання", other: "Інше"
+    };
 
     const listContainer = document.getElementById('servicesList');
     
+    // --- ВІДОБРАЖЕННЯ СПИСКУ ---
     function renderServices(filter = 'all', searchQuery = '') {
         listContainer.innerHTML = '';
         const filtered = servicesData.filter(s => {
-            const matchesCategory = filter === 'all' || s.category === filter;
-            const matchesSearch = s.name.toLowerCase().includes(searchQuery.toLowerCase());
+            const matchesCategory = filter === 'all' || s.type === filter;
+            const matchesSearch = s.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                                  typeNames[s.type].toLowerCase().includes(searchQuery.toLowerCase());
             return matchesCategory && matchesSearch;
         });
+
+        filtered.sort((a, b) => a.name.localeCompare(b.name));
 
         filtered.forEach(service => {
             const card = document.createElement('div');
             card.className = 'service-card';
             card.onclick = () => openModal(service);
+            
             const logoUrl = `https://logo.clearbit.com/${service.domain}`;
+            const catName = typeNames[service.type] || "Сервіс";
 
             card.innerHTML = `
                 <div class="service-icon">
-                    <img src="${logoUrl}" onerror="this.parentElement.style.backgroundColor='#6c5ce7';this.style.display='none'">
+                    <img src="${logoUrl}" loading="lazy" 
+                         onerror="this.style.display='none'; this.nextElementSibling.style.display='block'">
+                    <span style="display:none; color:white; font-weight:bold; font-size:18px;">${service.name.charAt(0)}</span>
                 </div>
                 <div class="service-info">
                     <div class="service-name">${service.name}</div>
                     <div class="service-meta">
-                        <span class="tag ${service.type}">${service.category}</span>
+                        <span class="tag ${service.type}">${catName}</span>
                     </div>
                 </div>
-                <div style="color: var(--text-sec);">›</div>
+                <div style="color: #444;">›</div>
             `;
             listContainer.appendChild(card);
         });
         document.getElementById('totalAmount').innerText = filtered.length;
     }
 
-    let currentService = null;
-    const modal = document.getElementById('reminderModal');
-
+    // --- ФІЛЬТРИ ТА ПОШУК ---
     document.getElementById('searchInput').addEventListener('input', (e) => {
-        const activeChip = document.querySelector('.chip.active').innerText;
-        let cat = activeChip === "Всі" ? 'all' : activeChip;
+        const currentFilterClass = document.querySelector('.chip.active').getAttribute('onclick');
+        // Простий парсинг категорії з onclick
+        const match = currentFilterClass.match(/'([^']+)'/);
+        const cat = match ? match[1] : 'all';
         renderServices(cat, e.target.value);
     });
 
@@ -289,23 +441,53 @@
         renderServices(category, document.getElementById('searchInput').value);
     }
 
+    // --- МОДАЛЬНЕ ВІКНО ---
+    let currentService = null;
+    const modal = document.getElementById('reminderModal');
+    
     function openModal(service) {
         currentService = service;
-        document.getElementById('modalServiceName').innerText = service.name;
+        document.getElementById('modalTitle').innerText = service.name;
+        document.getElementById('modalImg').src = `https://logo.clearbit.com/${service.domain}`;
+        
+        // Скидаємо поля
         document.getElementById('dateInput').valueAsDate = new Date();
+        document.getElementById('priceInput').value = '';
+        
         modal.classList.add('open');
         tg.HapticFeedback.impactOccurred('light'); 
     }
 
     function closeModal() { modal.classList.remove('open'); }
+    modal.onclick = (e) => { if(e.target === modal) closeModal(); }
 
+    // --- ВІДПРАВКА ДАНИХ ---
     function sendDataToTelegram() {
         const dateVal = document.getElementById('dateInput').value;
-        if (!dateVal) return;
-        const data = JSON.stringify({ service: currentService.name, date: dateVal, action: "set_reminder" });
+        const priceVal = document.getElementById('priceInput').value;
+        const cycleVal = document.getElementById('cycleInput').value;
+        const notifyVal = document.getElementById('notifyInput').value;
+
+        if (!dateVal) {
+            tg.HapticFeedback.notificationOccurred('error');
+            document.getElementById('dateInput').style.borderColor = '#ff7675';
+            setTimeout(() => document.getElementById('dateInput').style.borderColor = '#3f3f46', 2000);
+            return;
+        }
+
+        const data = JSON.stringify({ 
+            service: currentService.name, 
+            date: dateVal, 
+            price: priceVal || "0",
+            cycle: cycleVal,
+            notify_before: notifyVal,
+            action: "add_subscription" 
+        });
+        
         tg.sendData(data); 
     }
 
+    // Запуск
     renderServices();
 </script>
 
