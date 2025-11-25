@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>UnSub App</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        /* --- СТИЛІ --- */
+        :root {
+            --bg-color: #121216;
+            --text-main: #ffffff;
+            --card-bg: #1e1e24;
+            --primary: #6c5ce7;
+            --text-sec: #a0a0b0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        /* --- SPLASH SCREEN (Вітальна анімація) --- */
+        #splash-screen {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: var(--bg-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.8s ease-out, visibility 0.8s;
+        }
+        
+        #splash-screen.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .logo-title {
+            font-size: 42px;
+            font-weight: 800;
+            letter-spacing: -1px;
+            background: linear-gradient(45deg, #6c5ce7, #a29bfe);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+            animation: popIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .logo-subtitle {
+            font-size: 12px;
+            font-weight: 300;
+            color: #666;
+            letter-spacing: 1px;
+            opacity: 0;
+            animation: fadeIn 1s ease-in forwards;
+            animation-delay: 0.5s;
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes fadeIn {
+            to { opacity: 1; color: var(--text-sec); }
+        }
+
+        /* --- ОСНОВНИЙ ДОДАТОК --- */
+        .app-container {
+            width: 100%;
+            max-width: 100%;
+            padding: 16px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column; 
+            height: 100%;
+            opacity: 0; /* Спочатку приховано */
+            transition: opacity 1s;
+        }
+        .app-container.visible { opacity: 1; }
+
+        .static-header { flex-shrink: 0; }
+        
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .savings { font-size: 11px; color: var(--text-sec); letter-spacing: 0.5px; }
+        .amount { font-size: 24px; font-weight: 800; color: var(--text-main); margin-top: 2px; }
+
+        .search-bar {
+            background: var(--card-bg);
+            border: 1px solid transparent;
+            border-radius: 12px;
+            padding: 12px;
+            width: 100%;
+            color: var(--text-main);
+            box-sizing: border-box;
+            margin-bottom: 10px;
+            font-size: 16px;
+            outline: none;
+        }
+        
+        .filters { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 5px; margin-bottom: 10px; scrollbar-width: none; }
+        .chip {
+            background: var(--card-bg); padding: 8px 14px; border-radius: 18px; font-size: 13px;
+            white-space: nowrap; cursor: pointer; border: 1px solid transparent; color: var(--text-main);
+        }
+        .chip.active { background: var(--primary); color: #fff; }
+
+        .service-list-wrapper { flex-grow: 1; overflow-y: auto; padding-bottom: 100px; }
+        .service-card {
+            background: var(--card-bg); border-radius: 14px; padding: 12px;
+            display: flex; align-items: center; cursor: pointer; margin-bottom: 8px;
+        }
+        .service-icon {
+            width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+            margin-right: 12px; flex-shrink: 0; background-color: #333; overflow: hidden;
+        }
+        .service-icon img { width: 100%; height: 100%; object-fit: cover; }
+
+        .service-info { flex-grow: 1; }
+        .service-name { font-weight: 600; font-size: 15px; margin-bottom: 2px; }
+        .service-meta { display: flex; align-items: center; font-size: 12px; color: var(--text-sec); }
+        .tag { padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; text-transform: uppercase; margin-right: 6px; }
+
+        .tag.prod { background: rgba(72, 52, 212, 0.2); color: #a29bfe; }
+        .tag.music { background: rgba(0, 168, 255, 0.2); color: #74b9ff; }
+        .tag.stream { background: rgba(235, 77, 75, 0.2); color: #ff7675; }
+        .tag.game { background: rgba(85, 239, 196, 0.2); color: #55efc4; }
+        .tag.other { background: rgba(253, 203, 110, 0.2); color: #fdcb6e; }
+
+        /* Модалка */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(2px);
+            display: flex; align-items: flex-end; opacity: 0; pointer-events: none;
+            transition: opacity 0.2s; z-index: 1000;
+        }
+        .modal-overlay.open { opacity: 1; pointer-events: all; }
+
+        .modal {
+            background: var(--bg-color); width: 100%; padding: 20px;
+            border-top-left-radius: 20px; border-top-right-radius: 20px;
+            transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.3); border-top: 1px solid var(--card-bg);
+        }
+        .modal-overlay.open .modal { transform: translateY(0); }
+
+        .form-group { margin-bottom: 16px; }
+        .form-control {
+            width: 100%; background: var(--card-bg); border: none; color: var(--text-main);
+            padding: 12px; border-radius: 10px; font-size: 16px; outline: none; box-sizing: border-box;
+        }
+        
+        .btn-confirm {
+            width: 100%; padding: 14px; border-radius: 12px; border: none;
+            font-weight: 600; font-size: 16px; cursor: pointer;
+            background: var(--primary); color: #fff; margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div id="splash-screen">
+    <div class="logo-title">UnSub</div>
+    <div class="logo-subtitle">developed by Code&Go</div>
+</div>
+
+<div class="app-container" id="main-app">
+    <div class="static-header">
+        <header>
+            <div>
+                <div class="savings">ВСЬОГО СЕРВІСІВ</div>
+                <div class="amount" id="totalAmount">0</div>
+            </div>
+        </header>
+        <input type="text" id="searchInput" class="search-bar" placeholder="🔍 Пошук...">
+        <div class="filters">
+            <div class="chip active" onclick="filterServices('all', this)">Всі</div>
+            <div class="chip" onclick="filterServices('Стрімінг', this)">Стрімінг</div>
+            <div class="chip" onclick="filterServices('Музика', this)">Музика</div>
+            <div class="chip" onclick="filterServices('Ігри', this)">Ігри</div>
+            <div class="chip" onclick="filterServices('Продуктивність', this)">Робота</div>
+        </div>
+    </div>
+
+    <div class="service-list-wrapper">
+        <div id="servicesList"></div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="reminderModal">
+    <div class="modal">
+        <h2 style="margin: 0 0 10px 0; text-align: center;">Нагадування</h2>
+        <div style="text-align: center; color: var(--text-sec); margin-bottom: 20px;" id="modalServiceName">Service</div>
+        
+        <div class="form-group">
+            <label style="display:block; margin-bottom:5px; color:var(--text-sec); font-size:12px;">ДАТА ЗАКІНЧЕННЯ</label>
+            <input type="date" class="form-control" id="dateInput">
+        </div>
+
+        <button class="btn-confirm" onclick="sendDataToTelegram()">Зберегти нагадування</button>
+        <div style="text-align: center; margin-top: 15px; color: var(--text-sec); font-size: 14px;" onclick="closeModal()">Скасувати</div>
+    </div>
+</div>
+
+<script>
+    const tg = window.Telegram.WebApp;
+    tg.expand();
+
+    // --- ЛОГІКА SPLASH SCREEN ---
+    window.onload = function() {
+        setTimeout(() => {
+            document.getElementById('splash-screen').classList.add('hidden');
+            document.getElementById('main-app').classList.add('visible');
+        }, 2500); // 2.5 секунди показуємо заставку
+    };
+
+    // --- ДАНІ ---
+    const servicesData = [
+        { name: "Netflix", category: "Стрімінг", type: "stream", domain: "netflix.com" },
+        { name: "YouTube Premium", category: "Стрімінг", type: "stream", domain: "youtube.com" },
+        { name: "Spotify", category: "Музика", type: "music", domain: "spotify.com" },
+        { name: "Apple Music", category: "Музика", type: "music", domain: "music.apple.com" },
+        { name: "PlayStation Plus", category: "Ігри", type: "game", domain: "playstation.com" },
+        { name: "Xbox Game Pass", category: "Ігри", type: "game", domain: "xbox.com" },
+        { name: "Steam", category: "Ігри", type: "game", domain: "steampowered.com" },
+        { name: "Discord Nitro", category: "Ігри", type: "game", domain: "discord.com" },
+        { name: "ChatGPT", category: "Продуктивність", type: "prod", domain: "openai.com" },
+        { name: "Midjourney", category: "Продуктивність", type: "prod", domain: "midjourney.com" },
+        { name: "Adobe Cloud", category: "Продуктивність", type: "prod", domain: "adobe.com" },
+        { name: "Figma", category: "Продуктивність", type: "prod", domain: "figma.com" },
+        { name: "Duolingo", category: "Навчання", type: "other", domain: "duolingo.com" },
+        { name: "Tinder", category: "Інше", type: "other", domain: "tinder.com" }
+    ];
+
+    const listContainer = document.getElementById('servicesList');
+    
+    function renderServices(filter = 'all', searchQuery = '') {
+        listContainer.innerHTML = '';
+        const filtered = servicesData.filter(s => {
+            const matchesCategory = filter === 'all' || s.category === filter;
+            const matchesSearch = s.name.toLowerCase().includes(searchQuery.toLowerCase());
+            return matchesCategory && matchesSearch;
+        });
+
+        filtered.forEach(service => {
+            const card = document.createElement('div');
+            card.className = 'service-card';
+            card.onclick = () => openModal(service);
+            const logoUrl = `https://logo.clearbit.com/${service.domain}`;
+
+            card.innerHTML = `
+                <div class="service-icon">
+                    <img src="${logoUrl}" onerror="this.parentElement.style.backgroundColor='#6c5ce7';this.style.display='none'">
+                </div>
+                <div class="service-info">
+                    <div class="service-name">${service.name}</div>
+                    <div class="service-meta">
+                        <span class="tag ${service.type}">${service.category}</span>
+                    </div>
+                </div>
+                <div style="color: var(--text-sec);">›</div>
+            `;
+            listContainer.appendChild(card);
+        });
+        document.getElementById('totalAmount').innerText = filtered.length;
+    }
+
+    let currentService = null;
+    const modal = document.getElementById('reminderModal');
+
+    document.getElementById('searchInput').addEventListener('input', (e) => {
+        const activeChip = document.querySelector('.chip.active').innerText;
+        let cat = activeChip === "Всі" ? 'all' : activeChip;
+        renderServices(cat, e.target.value);
+    });
+
+    function filterServices(category, element) {
+        document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+        element.classList.add('active');
+        renderServices(category, document.getElementById('searchInput').value);
+    }
+
+    function openModal(service) {
+        currentService = service;
+        document.getElementById('modalServiceName').innerText = service.name;
+        document.getElementById('dateInput').valueAsDate = new Date();
+        modal.classList.add('open');
+        tg.HapticFeedback.impactOccurred('light'); 
+    }
+
+    function closeModal() { modal.classList.remove('open'); }
+
+    function sendDataToTelegram() {
+        const dateVal = document.getElementById('dateInput').value;
+        if (!dateVal) return;
+        const data = JSON.stringify({ service: currentService.name, date: dateVal, action: "set_reminder" });
+        tg.sendData(data); 
+    }
+
+    renderServices();
+</script>
+
+</body>
+</html>
