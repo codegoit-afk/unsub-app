@@ -31,7 +31,7 @@
 
         /* --- ЗАСТАВКА --- */
         #splash-screen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
             background-color: var(--bg-color);
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             z-index: 9999; transition: opacity 0.6s ease-out, visibility 0.6s;
@@ -250,9 +250,15 @@
             </div>
         </div>
 
-        <div class="form-group">
-            <label class="form-label">Наступна оплата</label>
-            <input type="date" class="form-control" id="dateInput">
+        <div class="form-grid">
+            <div class="form-group">
+                <label class="form-label">Дата оплати</label>
+                <input type="date" class="form-control" id="dateInput">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Час (опціонально)</label>
+                <input type="time" class="form-control" id="timeInput"> 
+            </div>
         </div>
 
         <div class="form-group">
@@ -405,14 +411,9 @@
     
     // 1. Функція, яка спрацьовує при кліку на кнопку фільтра
     function activateFilter(filterType, btnElement) {
-        // Оновлюємо змінну
         currentFilter = filterType;
-
-        // Візуально перемикаємо клас 'active' на кнопках
         document.querySelectorAll('.chip').forEach(chip => chip.classList.remove('active'));
         btnElement.classList.add('active');
-
-        // Перемальовуємо список
         renderServices();
     }
 
@@ -421,11 +422,8 @@
         listContainer.innerHTML = '';
         
         const filtered = servicesData.filter(s => {
-            // Перевірка категорії
             const matchesCategory = currentFilter === 'all' || s.type === currentFilter;
-            // Перевірка пошуку
             const matchesSearch = s.name.toLowerCase().includes(currentSearch.toLowerCase());
-            
             return matchesCategory && matchesSearch;
         });
 
@@ -462,6 +460,7 @@
         document.getElementById('modalTitle').innerText = service.name;
         document.getElementById('modalImg').src = `https://logo.clearbit.com/${service.domain}`;
         document.getElementById('dateInput').valueAsDate = new Date();
+        document.getElementById('timeInput').value = ''; // Очищаємо час
         document.getElementById('priceInput').value = '';
         document.getElementById('unsubCheckbox').checked = false;
         
@@ -481,11 +480,18 @@
 
     // --- ЗБЕРЕЖЕННЯ (КЛЮЧОВА ФУНКЦІЯ) ---
     function saveSubscription() {
-        const dateVal = document.getElementById('dateInput').value;
+        const dateVal = document.getElementById('dateInput').value; // YYYY-MM-DD
+        const timeVal = document.getElementById('timeInput').value; // HH:MM (може бути порожнім)
         const priceVal = parseFloat(document.getElementById('priceInput').value);
         const isUnsub = document.getElementById('unsubCheckbox').checked;
 
         if (!dateVal) return alert("Вкажіть дату!");
+
+        // 🌟 ВИПРАВЛЕННЯ: Об'єднуємо дату та час
+        let fullDate = dateVal;
+        if (timeVal) {
+            fullDate = dateVal + 'T' + timeVal;
+        }
 
         // 1. Оновлюємо локальну статистику
         if (!isNaN(priceVal)) {
@@ -500,16 +506,14 @@
         // 2. Відправляємо в Телеграм (для бота)
         const data = JSON.stringify({ 
             service: currentService.name, 
-            date: dateVal, 
+            date: fullDate, // 👈 Надсилаємо об'єднану дату/час
             price: priceVal || 0,
             status: isUnsub ? "cancelled" : "active",
-            // 🌟 ВИПРАВЛЕННЯ: Ключ 'action' видалено для узгодженості з бекендом
         });
         
-        // 🌟 ВИПРАВЛЕННЯ: Додана явна перевірка, щоб уникнути помилок у tg.sendData
+        // 🌟 ВИПРАВЛЕННЯ: Надійний виклик sendData, щоб уникнути помилок
         if (window.Telegram.WebApp && window.Telegram.WebApp.sendData) {
-            window.Telegram.WebApp.sendData(data); // Використовуємо повний виклик для надійності
-            // tg.sendData(data); // Це також має працювати, але повний виклик надійніший
+            window.Telegram.WebApp.sendData(data);
         } else {
             alert("Помилка відправки: API Telegram WebApp недоступний. Спробуйте в мобільному додатку.");
         }
