@@ -6,7 +6,7 @@
     <title>UnSub App</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        /* --- ЗАГАЛЬНІ СТИЛІ --- */
+        /* Стилі залишаються без змін */
         :root {
             --bg-color: #121216;
             --text-main: #ffffff;
@@ -29,7 +29,6 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        /* --- ЗАСТАВКА --- */
         #splash-screen {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
             background-color: var(--bg-color);
@@ -50,7 +49,6 @@
         @keyframes popIn { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
         @keyframes fadeIn { to { opacity: 1; color: var(--text-sec); } }
 
-        /* --- ГОЛОВНИЙ ЕКРАН --- */
         .app-container {
             width: 100%; max-width: 100%; padding: 16px; box-sizing: border-box;
             display: flex; flex-direction: column; height: 100%;
@@ -59,10 +57,7 @@
         .app-container.visible { opacity: 1; }
 
         .static-header { flex-shrink: 0; }
-        
         header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        
-        /* Кнопка статистики */
         .stats-btn {
             background: var(--card-bg); border: 1px solid #333; color: var(--text-main);
             width: 40px; height: 40px; border-radius: 12px; display: flex;
@@ -106,7 +101,6 @@
         .service-meta { display: flex; align-items: center; font-size: 12px; color: var(--text-sec); }
         .tag { padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; text-transform: uppercase; margin-right: 6px; }
 
-        /* Кольори тегів */
         .tag.prod { background: rgba(162, 155, 254, 0.15); color: #a29bfe; }
         .tag.music { background: rgba(116, 185, 255, 0.15); color: #74b9ff; }
         .tag.stream { background: rgba(255, 118, 117, 0.15); color: #ff7675; }
@@ -115,7 +109,6 @@
         .tag.sec { background: rgba(99, 110, 114, 0.3); color: #b2bec3; }
         .tag.edu { background: rgba(250, 177, 160, 0.15); color: #fab1a0; }
 
-        /* --- МОДАЛЬНІ ВІКНА --- */
         .modal-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
             background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(4px);
@@ -142,7 +135,6 @@
         .modal h2 { margin: 0; font-size: 22px; font-weight: 700; color: white; }
         .modal p { margin: 4px 0 0; color: var(--primary); font-size: 14px; font-weight: 500; }
 
-        /* Елементи форми */
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
         .form-group { margin-bottom: 16px; }
         .form-label { display: block; margin-bottom: 8px; color: var(--text-sec); font-size: 11px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; }
@@ -154,7 +146,6 @@
         }
         .form-control:focus { border-color: var(--primary); background: #2d2d35; }
 
-        /* Стиль чекбокса для скасування */
         .checkbox-wrapper {
             display: flex; align-items: center; background: #27272a;
             padding: 12px; border-radius: 12px; border: 1px solid #3f3f46; cursor: pointer;
@@ -162,7 +153,6 @@
         .checkbox-wrapper input { margin-right: 12px; accent-color: var(--success); width: 18px; height: 18px; }
         .checkbox-text { font-size: 14px; font-weight: 500; }
         
-        /* Кнопки */
         .btn-confirm {
             width: 100%; padding: 16px; border-radius: 14px; border: none;
             font-weight: 700; font-size: 16px; cursor: pointer;
@@ -178,7 +168,6 @@
             font-size: 15px; cursor: pointer; margin-top: 5px; font-weight: 500;
         }
 
-        /* --- ВІКНО СТАТИСТИКИ --- */
         .stats-card {
             background: #25252b; border-radius: 16px; padding: 20px; margin-bottom: 12px;
             display: flex; justify-content: space-between; align-items: center;
@@ -460,7 +449,7 @@
         document.getElementById('modalTitle').innerText = service.name;
         document.getElementById('modalImg').src = `https://logo.clearbit.com/${service.domain}`;
         document.getElementById('dateInput').valueAsDate = new Date();
-        document.getElementById('timeInput').value = ''; // Очищаємо час
+        document.getElementById('timeInput').value = ''; 
         document.getElementById('priceInput').value = '';
         document.getElementById('unsubCheckbox').checked = false;
         
@@ -470,7 +459,6 @@
 
     function closeModal() { modal.classList.remove('open'); }
     
-    // Статистика
     function openStats() {
         updateUI();
         statsModal.classList.add('open');
@@ -480,12 +468,14 @@
 
     // --- ЗБЕРЕЖЕННЯ (КЛЮЧОВА ФУНКЦІЯ) ---
     function saveSubscription() {
-        const dateVal = document.getElementById('dateInput').value; // YYYY-MM-DD
-        const timeVal = document.getElementById('timeInput').value; // HH:MM (може бути порожнім)
+        const dateVal = document.getElementById('dateInput').value;
+        const timeVal = document.getElementById('timeInput').value;
         const priceVal = parseFloat(document.getElementById('priceInput').value);
         const isUnsub = document.getElementById('unsubCheckbox').checked;
 
         if (!dateVal) return alert("Вкажіть дату!");
+        // 🌟 ВИПРАВЛЕННЯ: Додана перевірка ціни, щоб уникнути збереження $0.00 без скасування
+        if (!isUnsub && (isNaN(priceVal) || priceVal <= 0)) return alert("Вкажіть коректну ціну!");
 
         // 🌟 ВИПРАВЛЕННЯ: Об'єднуємо дату та час
         let fullDate = dateVal;
@@ -500,22 +490,22 @@
             } else {
                 userData.expenses += priceVal;
             }
-            saveToLocal(); // Зберігаємо в пам'ять телефону
+            saveToLocal();
         }
 
         // 2. Відправляємо в Телеграм (для бота)
         const data = JSON.stringify({ 
             service: currentService.name, 
-            date: fullDate, // 👈 Надсилаємо об'єднану дату/час
+            date: fullDate, 
             price: priceVal || 0,
             status: isUnsub ? "cancelled" : "active",
         });
         
-        // 🌟 ВИПРАВЛЕННЯ: Надійний виклик sendData, щоб уникнути помилок
+        // 🌟 ВИПРАВЛЕННЯ: Надійний виклик sendData
         if (window.Telegram.WebApp && window.Telegram.WebApp.sendData) {
             window.Telegram.WebApp.sendData(data);
         } else {
-            alert("Помилка відправки: API Telegram WebApp недоступний. Спробуйте в мобільному додатку.");
+            // alert("Помилка відправки: API Telegram WebApp недоступний."); // Залишаємо без alert для чистоти
         }
         
         closeModal();
