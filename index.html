@@ -467,49 +467,30 @@
     function closeStats() { statsModal.classList.remove('open'); }
 
     // --- ЗБЕРЕЖЕННЯ (КЛЮЧОВА ФУНКЦІЯ) ---
-    function saveSubscription() {
-        const dateVal = document.getElementById('dateInput').value;
-        const timeVal = document.getElementById('timeInput').value;
-        const priceVal = parseFloat(document.getElementById('priceInput').value);
-        const isUnsub = document.getElementById('unsubCheckbox').checked;
+    // --- ЗБЕРЕЖЕННЯ (ТИМЧАСОВА ТЕСТОВА ФУНКЦІЯ) ---
+function saveSubscription() {
+    // 🌟 ТИМЧАСОВИЙ ТЕСТОВИЙ БЛОК: 
+    // Надсилаємо простий, гарантовано коректний JSON.
+    // Видалено весь код збору та перевірки реальних даних.
+    const data = JSON.stringify({ 
+        test: "success", 
+        timestamp: new Date().getTime(),
+        // Додаємо ID користувача для ще кращої діагностики на PythonAnywhere
+        user_id: window.Telegram.WebApp.initDataUnsafe.user.id 
+    }); 
 
-        if (!dateVal) return alert("Вкажіть дату!");
-        // 🌟 ВИПРАВЛЕННЯ: Додана перевірка ціни, щоб уникнути збереження $0.00 без скасування
-        if (!isUnsub && (isNaN(priceVal) || priceVal <= 0)) return alert("Вкажіть коректну ціну!");
-
-        // 🌟 ВИПРАВЛЕННЯ: Об'єднуємо дату та час
-        let fullDate = dateVal;
-        if (timeVal) {
-            fullDate = dateVal + 'T' + timeVal;
-        }
-
-        // 1. Оновлюємо локальну статистику
-        if (!isNaN(priceVal)) {
-            if (isUnsub) {
-                userData.savings += priceVal;
-            } else {
-                userData.expenses += priceVal;
-            }
-            saveToLocal();
-        }
-
-        // 2. Відправляємо в Телеграм (для бота)
-        const data = JSON.stringify({ 
-            service: currentService.name, 
-            date: fullDate, 
-            price: priceVal || 0,
-            status: isUnsub ? "cancelled" : "active",
-        });
-        
-        // 🌟 ВИПРАВЛЕННЯ: Надійний виклик sendData
-        if (window.Telegram.WebApp && window.Telegram.WebApp.sendData) {
-            window.Telegram.WebApp.sendData(data);
-        } else {
-            // alert("Помилка відправки: API Telegram WebApp недоступний."); // Залишаємо без alert для чистоти
-        }
-        
-        closeModal();
+    // 🌟 ВІДПРАВКА: Включає діагностичний alert()
+    if (window.Telegram.WebApp && window.Telegram.WebApp.sendData) {
+        window.Telegram.WebApp.sendData(data);
+        // Alert підтвердить, що JS-функція спрацювала і надіслала команду
+        alert("Тест: Відправка успішна. Перевірте логи PythonAnywhere."); 
+    } else {
+        alert("Помилка відправки: API Telegram WebApp недоступний.");
     }
+    
+    // Закриваємо модальне вікно
+    closeModal();
+}
 
     // Закриття по кліку на фон
     document.querySelectorAll('.modal-overlay').forEach(overlay => {
