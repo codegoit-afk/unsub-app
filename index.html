@@ -479,7 +479,7 @@
     }
     function closeStats() { statsModal.classList.remove('open'); }
 
-    // --- ЗБЕРЕЖЕННЯ ---
+    // --- ЗБЕРЕЖЕННЯ (КЛЮЧОВА ФУНКЦІЯ) ---
     function saveSubscription() {
         const dateVal = document.getElementById('dateInput').value;
         const priceVal = parseFloat(document.getElementById('priceInput').value);
@@ -503,10 +503,17 @@
             date: dateVal, 
             price: priceVal || 0,
             status: isUnsub ? "cancelled" : "active",
-            action: "add_subscription" 
+            // 🌟 ВИПРАВЛЕННЯ: Ключ 'action' видалено для узгодженості з бекендом
         });
         
-        tg.sendData(data); 
+        // 🌟 ВИПРАВЛЕННЯ: Додана явна перевірка, щоб уникнути помилок у tg.sendData
+        if (window.Telegram.WebApp && window.Telegram.WebApp.sendData) {
+            window.Telegram.WebApp.sendData(data); // Використовуємо повний виклик для надійності
+            // tg.sendData(data); // Це також має працювати, але повний виклик надійніший
+        } else {
+            alert("Помилка відправки: API Telegram WebApp недоступний. Спробуйте в мобільному додатку.");
+        }
+        
         closeModal();
     }
 
